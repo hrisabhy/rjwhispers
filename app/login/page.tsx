@@ -31,7 +31,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-black">
       <div className="bg-gray-900/70 backdrop-blur-lg shadow-xl rounded-2xl p-8 max-w-md w-full text-center border border-gray-700">
-        <h2 className="text-4xl font-bold text-white mb-6 tracking-wide">
+      <h2 className="text-4xl font-bold text-white mb-6 tracking-wide">
           RJ<span className="text-pink-500">Whispers</span>
         </h2>
 
