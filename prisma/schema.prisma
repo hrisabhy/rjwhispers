@@ -14,3 +14,19 @@ model User {
   password String
   createdAt DateTime @default(now())
 }
+
+model Confession {
+  id        String    @id @default(uuid())
+  text      String
+  likes     Int       @default(0)
+  comments  Comment[]
+  createdAt DateTime  @default(now())
+}
+
+model Comment {
+  id          String    @id @default(uuid())
+  confessionId String
+  confession  Confession @relation(fields: [confessionId], references: [id])
+  text        String
+  createdAt   DateTime  @default(now())
+}
