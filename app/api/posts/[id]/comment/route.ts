@@ -1,31 +1,17 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/db";
 
-const prisma = new PrismaClient();
-
-export async function POST(
-  request: Request, // First argument: the request object
-  { params }: { params: { id: string } } // Second argument: the context object with params
-) {
+export async function POST(req: NextRequest) {
   try {
-    const { id } = params; // Extract the post ID from the URL params
-    const { text, userId } = await request.json(); // Parse the request body
-
-    // Create a new comment
-    const newComment = await prisma.comment.create({
-      data: {
-        text,
-        userId: parseInt(userId), // Ensure userId is a number
-        postId: parseInt(id), // Ensure postId is a number
-      },
+    const { confessionId, text } = await req.json();
+    if (!confessionId || !text) {
+      return NextResponse.json({ message: "Confession ID and Text are required" }, { status: 400 });
+    }
+    const comment = await prisma.comment.create({
+      data: { confessionId, text },
     });
-
-    return NextResponse.json(newComment, { status: 201 });
+    return NextResponse.json(comment, { status: 201 });
   } catch (error) {
-    console.error('Error creating comment:', error);
-    return NextResponse.json(
-      { error: 'Failed to create comment' },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
 }
