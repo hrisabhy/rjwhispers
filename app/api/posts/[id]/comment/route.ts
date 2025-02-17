@@ -1,17 +1,22 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import prisma from "@/db";
-
-export async function POST(req: NextRequest) {
+export async function POST(req: Request, { params }: { params: { id: string } }) {
   try {
-    const { confessionId, text } = await req.json();
-    if (!confessionId || !text) {
-      return NextResponse.json({ message: "Confession ID and Text are required" }, { status: 400 });
+    const { id } = await params;
+    const { comment } = await req.json();
+    if (!comment || typeof comment !== "string") {
+      return NextResponse.json({ error: "Invalid comment" }, { status: 400 });
     }
-    const comment = await prisma.comment.create({
-      data: { confessionId, text },
+    // Create a new comment linked to the confession
+    const newComment = await prisma.comment.create({
+      data: {
+        confessionId: id,
+        text: comment,
+      },
     });
-    return NextResponse.json(comment, { status: 201 });
+    return NextResponse.json(newComment, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+    console.error(error);
+    return NextResponse.json({ error: "Failed to add comment" }, { status: 500 });
   }
 }
