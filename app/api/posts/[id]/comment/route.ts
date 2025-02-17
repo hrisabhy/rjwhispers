@@ -1,27 +1,31 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
 import prisma from "@/db";
 
-export async function POST(req: Request, context: { params: { id: string } }) {
+const prisma = new PrismaClient();
+
+export async function POST(
+  request: Request, // First argument: the request object
+  { params }: { params: { id: string } } // Second argument: the context object with params
+) {
   try {
-    const { id } = context.params;
-    const { comment } = await req.json();
+    const { id } = params; // Extract the post ID from the URL params
+    const { text, userId } = await request.json(); // Parse the request body
 
-    if (!comment || typeof comment !== "string") {
-      return NextResponse.json({ error: "Invalid comment" }, { status: 400 });
-    }
-
-    const post = await prisma.post.update({
-      where: { id },
+    // Create a new comment
+    const newComment = await prisma.comment.create({
       data: {
-        comments: {
-          push: comment, // Adds the comment to the array
-        },
+        text,
+        userId: parseInt(userId), // Ensure userId is a number
+        postId: parseInt(id), // Ensure postId is a number
       },
     });
 
-    return NextResponse.json(post, { status: 200 });
+    return NextResponse.json(newComment, { status: 201 });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Failed to add comment" }, { status: 500 });
+    console.error('Error creating comment:', error);
+    return NextResponse.json(
+      { error: 'Failed to create comment' },
+      { status: 500 }
+    );
   }
 }
