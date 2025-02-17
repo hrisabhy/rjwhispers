@@ -7,7 +7,9 @@ import Sidebar from "@/components/Sidebar";
 export default function Feed() {
   const { data: session } = useSession();
   const [postText, setPostText] = useState("");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [posts, setPosts] = useState([]);
+  const [commentInputs, setCommentInputs] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -33,30 +35,37 @@ export default function Feed() {
     }
   };
 
-  const handleLike = async (id) => {
+  const handleLike = async (id: string) => {
     await fetch(`/api/posts/${id}/like`, { method: "POST" });
     setPosts(posts.map(post => post.id === id ? { ...post, likes: post.likes + 1 } : post));
   };
 
-  const handleComment = async (id, commentText) => {
-    if (commentText.trim() !== "") {
-      await fetch(`/api/posts/${id}/comment`, {
+  const handleComment = async (id: string) => {
+    const commentText = commentInputs[id]?.trim();
+    if (commentText) {
+      const res = await fetch(`/api/posts/${id}/comment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ comment: commentText }),
       });
-      setPosts(posts.map(post => post.id === id ? { ...post, comments: [...post.comments, commentText] } : post));
+      if (res.ok) {
+        const newComment = await res.json();
+        setPosts(posts.map(post => 
+          post.id === id ? { ...post, comments: [...(post.comments || []), newComment] } : post
+        ));
+        setCommentInputs({ ...commentInputs, [id]: "" });
+      }
     }
   };
 
   return (
     <div className="flex">
       {/* Sidebar */}
-      <Sidebar />
+      <Sidebar className="w-3/4"/>
 
       {/* Main Content */}
-      <div className="ml-64 flex-1 flex flex-col items-center pt-10 bg-black min-h-screen">
-        <div className="w-full max-w-lg bg-white text-black p-6 rounded-xl shadow-md">
+      <div className="flex flex-col items-center w-full md:ml-64 min-h-screen pt-10 bg-black">
+        <div className="w-full max-w-lg bg-white text-black p-6 rounded-xl shadow-md mt-4 sm:px-8">
           <h2 className="text-xl font-bold mb-6 tracking-wide">Create a Post</h2>
           <textarea
             className="w-full p-3 border rounded-lg focus:outline-none resize-none"
@@ -82,18 +91,29 @@ export default function Feed() {
                 <button onClick={() => handleLike(post.id)} className="text-blue-500">👍 {post.likes}</button>
               </div>
               <div className="mt-2">
-                <input
-                  type="text"
-                  placeholder="Add a comment..."
-                  className="w-full p-2 border rounded-lg focus:outline-none"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleComment(post.id, e.target.value);
-                  }}
-                />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="Add a comment..."
+                    className="w-full p-2 border rounded-lg focus:outline-none"
+                    value={commentInputs[post.id] || ""}
+                    onChange={(e) => setCommentInputs({ ...commentInputs, [post.id]: e.target.value })}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleComment(post.id);
+                    }}
+                  />
+                  {/* Comment Button (Visible only on mobile) */}
+                  <button
+                    onClick={() => handleComment(post.id)}
+                    className="bg-blue-500 text-white px-4 py-2 rounded-lg sm:hidden"
+                  >
+                    Comment
+                  </button>
+                </div>
                 <div className="mt-2">
-                {(post.comments ?? []).map((comment, index) => (
-  <p key={index} className="text-sm text-gray-700">💬 {comment}</p>
-))}
+                  {(post.comments ?? []).map((comment) => (
+                    <p key={comment.id} className="text-sm text-gray-700">💬 {comment.text}</p>
+                  ))}
                 </div>
               </div>
             </div>
